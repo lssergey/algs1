@@ -35,7 +35,7 @@ public class Deque<Item> implements Iterable<Item> {
         }
     }
 
-    public Deque() {}
+    public Deque() { }
 
     public boolean isEmpty() {
         return N == 0;
@@ -54,6 +54,9 @@ public class Deque<Item> implements Iterable<Item> {
         node.item = item;
         node.prev = null;
         node.next = first;
+        if (first != null) {
+            first.prev = node;
+        }
         first = node;
         if (N == 1) {
             last = node;
@@ -69,6 +72,9 @@ public class Deque<Item> implements Iterable<Item> {
         node.item = item;
         node.prev = last;
         node.next = null;
+        if (last != null) {
+            last.next = node;
+        }
         last = node;
         if (N == 1) {
             first = node;
@@ -109,11 +115,21 @@ public class Deque<Item> implements Iterable<Item> {
         return new DequeIterator();
     }
 
-    public static void main(String argv[]) {
+    public static void main(String[] args) {
         Deque<Integer> deque = new Deque<Integer>();
         deque.addFirst(5);
-        StdOut.println(deque.size());
+        deque.addFirst(5);
+        deque.addFirst(5);
+        deque.addFirst(5);
+        deque.addFirst(5);
+        deque.addFirst(5);
+        deque.addFirst(5);
         deque.removeLast();
-        StdOut.println(deque.size());
+        deque.removeLast();
+        deque.removeLast();
+        deque.removeLast();
+        deque.removeLast();
+        deque.removeLast();
+        deque.removeLast();
     }
 }
