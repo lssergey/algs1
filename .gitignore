@@ -4,3 +4,4 @@ findbugs-2.0.1
 
 *.class
 *.zip
+/collinear/testing
