@@ -4,4 +4,7 @@ findbugs-2.0.1
 
 *.class
 *.zip
+.idea
+algs1.iml
 /collinear/testing
+/eightpuzzle/testing
