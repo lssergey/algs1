@@ -62,7 +62,10 @@ public class Board {
     }
 
     private Board changePosition(int from, int to) {
-        int[] blocks = this.blocks;
+        int[] blocks = new int[getNumberOfBlocks()];
+        for (int i = 0; i < getNumberOfBlocks(); i++) {
+            blocks[i] = this.blocks[i];
+        }
         int t = blocks[to];
         blocks[to] = blocks[from];
         blocks[from] = t;
@@ -203,9 +206,9 @@ public class Board {
 
     public static void main(String[] args) {
         int[][] blocks1 = {
-                {1, 2, 3},
-                {4, 5, 6},
-                {7, 8, 0}
+            {1, 2, 3},
+            {4, 5, 6},
+            {7, 8, 0}
         };
         Board board1 = new Board(blocks1);
         assert board1.isGoal();
@@ -224,12 +227,9 @@ public class Board {
 
         assert !board1.equals(board2);
 
-        StdOut.println(board1);
-        Queue<Board> queue = (Queue<Board>) board1.neighbors();
-        StdOut.println(board1);
+        Queue<Board> queue = (Queue<Board>) board2.neighbors();
         while (!queue.isEmpty()) {
             StdOut.println(queue.dequeue());
         }
-        StdOut.println(board1);
     }
 }
