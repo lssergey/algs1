@@ -50,7 +50,7 @@ public class Fast {
 
                     if (doIt) {
                         // Ура! Мы нашли линию!
-                        int lastEqual = firstEqual + equal;
+                        // Надо вывести её и нарисовать.
                         Point[] tmp = new Point[equal + 1];
 
                         // Не забываем добавить точку отсчёта
@@ -71,9 +71,7 @@ public class Fast {
                         // Выводим на стандартный поток вывода
                         for (int j = 0; j < equal + 1; j++) {
                             StdOut.print(tmp[j]);
-                            if (j < equal) {
-                                StdOut.print(" -> ");
-                            }
+                            if (j < equal) StdOut.print(" -> ");
                         }
                         StdOut.println();
                     }
