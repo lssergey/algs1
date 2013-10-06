@@ -1,5 +1,3 @@
-import java.util.Iterator;
-
 public class PointSET {
 
     private SET<Point2D> points;

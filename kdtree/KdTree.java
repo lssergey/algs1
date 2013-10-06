@@ -11,11 +11,53 @@ public class KdTree {
         private RectHV rect;
         private Node lb, rt;
         private boolean orientation;
+        private Node parent;
 
-        public Node(Point2D p, RectHV rect, boolean orientation) {
+        public Node(Point2D p, boolean orientation, Node parent) {
             this.p = p;
-            this.rect = rect;
             this.orientation = orientation;
+            this.parent = parent;
+        }
+
+        public double compare(Node h, Point2D that) {
+            if (h.orientation == HORIZONTAL) return that.y() - h.p.y();
+            else return that.x() - h.p.x();
+        }
+
+        public RectHV getRect() {
+            if (rect != null) return rect;
+            if (parent == null) {
+                rect = new RectHV(0, 0, 1, 1);
+                return rect;
+            }
+
+            double xmin, ymin, xmax, ymax;
+
+            double cmp = compare(parent, p);
+
+            if (parent.orientation == HORIZONTAL) {
+                xmin = parent.getRect().xmin();
+                xmax = parent.getRect().xmax();
+                if (cmp < 0) {
+                    ymin = parent.getRect().ymin();
+                    ymax = parent.p.y();
+                } else {
+                    ymin = parent.p.y();
+                    ymax = parent.getRect().ymax();
+                }
+            } else {
+                ymin = parent.getRect().ymin();
+                ymax = parent.getRect().ymax();
+                if (cmp < 0) {
+                    xmin = parent.getRect().xmin();
+                    xmax = parent.p.x();
+                } else {
+                    xmin = parent.p.x();
+                    xmax = parent.getRect().xmax();
+                }
+            }
+            rect = new RectHV(xmin, ymin, xmax, ymax);
+            return rect;
         }
     }
 
@@ -36,17 +78,32 @@ public class KdTree {
 
     public void insert(Point2D p) {
         // add the point p to the set (if it is not already in the set)
-        root = insert(root, p, new RectHV(0, 0, 1, 1), VERTICAL);
-        N++;
+        root = insert(root, p, VERTICAL, null);
     }
 
-    private Node insert(Node h, Point2D p, RectHV rect, boolean orientation) {
-        if (h == null) return new Node(p, rect, orientation);
+    private Node insert(Node h, Point2D p, boolean orientation, Node parent) {
+        if (h == null) {
+            N++;
+            return new Node(p, orientation, parent);
+        }
         if (h.p.equals(p)) return h;
 
         double cmp = compare(h, p);
-        if (cmp < 0) h.lb = insert(h.lb, p, getRectPart(rect, h.p, h.orientation, cmp), !orientation);
-        else if (cmp > 0) h.rt = insert(h.rt, p, getRectPart(rect, h.p, h.orientation, cmp), !orientation);
+        if (cmp < 0) {
+            h.lb = insert(
+                h.lb,
+                p,
+                !orientation,
+                h
+            );
+        } else if (cmp >= 0) {
+            h.rt = insert(
+                h.rt,
+                p,
+                !orientation,
+                h
+            );
+        }
 
         return h;
     }
@@ -56,63 +113,45 @@ public class KdTree {
         else return that.x() - h.p.x();
     }
 
-    private RectHV getRectPart(RectHV rect, Point2D p, boolean orientation, double cmp) {
-        double xmin, ymin, xmax, ymax;
-
-        if (orientation == HORIZONTAL) {
-            xmin = rect.xmin();
-            xmax = rect.xmax();
-            if (cmp < 0) {
-                ymin = rect.ymin();
-                ymax = p.y();
-            } else {
-                ymin = p.y();
-                ymax = rect.ymax();
-            }
-        } else {
-            ymin = rect.ymin();
-            ymax = rect.ymax();
-            if (cmp < 0) {
-                xmin = rect.xmin();
-                xmax = p.x();
-            } else {
-                xmin = p.x();
-                xmax = rect.xmax();
-            }
-        }
-        return new RectHV(xmin, ymin, xmax, ymax);
-    }
-
     public boolean contains(Point2D p) {
         // does the set contain the point p?
         Node node = root;
         while (node != null) {
-            double cmp = compare(node, p);
+            double cmpX = p.x() - node.p.x();
+            double cmpY = p.y() - node.p.y();
+
+            if (cmpX == 0 && cmpY == 0) return true;
+
+            double cmp = (node.orientation == HORIZONTAL) ? cmpY : cmpX;
             if (cmp < 0) node = node.lb;
-            else if (cmp > 0) node = node.rt;
-            else return true;
+            else if (cmp >= 0) node = node.rt;
         }
         return false;
     }
 
-    private void draw(Node x) {
-        if (x == null) return;
+    private void draw(Node h) {
+        if (h == null) return;
 
         StdDraw.setPenColor(StdDraw.BLACK);
-        x.p.draw();
+        StdDraw.setPenRadius(.01);
+        h.p.draw();
 
-        if (x.orientation == VERTICAL) {
-            double xcoord = x.p.x();
+        if (h.orientation == VERTICAL) {
+            double xcoord = h.p.x();
+            StdDraw.setPenRadius(.001);
             StdDraw.setPenColor(StdDraw.RED);
-            new Point2D(xcoord, x.rect.ymin()).drawTo(new Point2D(xcoord, x.rect.ymax()));
+            new Point2D(xcoord, h.getRect().ymin()).drawTo(
+                    new Point2D(xcoord, h.getRect().ymax()));
         } else {
-            double ycoord = x.p.y();
+            double ycoord = h.p.y();
+            StdDraw.setPenRadius(.001);
             StdDraw.setPenColor(StdDraw.BLUE);
-            new Point2D(x.rect.xmin(), ycoord).drawTo(new Point2D(x.rect.xmax(), ycoord));
+            new Point2D(h.getRect().xmin(), ycoord).drawTo(
+                    new Point2D(h.getRect().xmax(), ycoord));
         }
 
-        draw(x.lb);
-        draw(x.rt);
+        draw(h.lb);
+        draw(h.rt);
     }
 
     public void draw() {
@@ -121,7 +160,7 @@ public class KdTree {
     }
 
     private void range(Node x, RectHV rect, Queue<Point2D> queue) {
-        if (x == null || !x.rect.intersects(rect)) return;
+        if (x == null || !x.getRect().intersects(rect)) return;
 
         if (rect.contains(x.p)) queue.enqueue(x.p);
 
@@ -137,32 +176,53 @@ public class KdTree {
 
         return queue;
     }
-//
-//    public Point2D nearest(Point2D p) {
-//        // a nearest neighbor in the set to p; null if set is empty
-//    }
 
-    public static void main(String[] args) {
-        KdTree tree = new KdTree();
-        StdOut.println(tree.isEmpty());
-        StdOut.println(tree.size());
+    private Point2D nearest(Node h, Point2D closest, Point2D p) {
+        if (h == null || h.getRect().distanceSquaredTo(p) > closest.distanceSquaredTo(p))
+            return closest;
 
-        Point2D p = new Point2D(.4, .7);
-        tree.insert(p);
-        StdOut.println(tree.isEmpty());
-        StdOut.println(tree.size());
-        StdOut.println(tree.contains(p));
+        double cmp = compare(h, p);
 
-        tree.insert(new Point2D(.2, .3));
-        tree.insert(new Point2D(.8, .1));
-        tree.insert(new Point2D(.5, .9));
-        tree.insert(new Point2D(.6, .0));
-        tree.insert(new Point2D(.1, .5));
-        tree.insert(new Point2D(.0, .6));
-        tree.insert(new Point2D(.9, .7));
-
-        for (Point2D point : tree.range(new RectHV(.2, .3, .8, .8))) {
-            StdOut.println(point);
+        if (cmp < 0) {
+            closest = nearest(h.lb, closest, p);
+            closest = nearest(h.rt, closest, p);
+        } else {
+            closest = nearest(h.rt, closest, p);
+            closest = nearest(h.lb, closest, p);
         }
+
+        if (h.p.distanceSquaredTo(p) < closest.distanceSquaredTo(p))
+            closest = h.p;
+
+        return closest;
     }
+
+    public Point2D nearest(Point2D p) {
+        // a nearest neighbor in the set to p; null if set is empty
+        if (isEmpty()) return null;
+        return nearest(root, root.p, p);
+    }
+
+//    public static void main(String[] args) {
+//        KdTree tree = new KdTree();
+//        StdOut.println(tree.isEmpty());
+//        StdOut.println(tree.size());
+//
+//        Point2D p = new Point2D(.4, .7);
+//        tree.insert(p);
+//        StdOut.println(tree.isEmpty());
+//        StdOut.println(tree.size());
+//        StdOut.println(tree.contains(p));
+//
+//        tree.insert(new Point2D(.2, .3));
+//        tree.insert(new Point2D(.8, .1));
+//        tree.insert(new Point2D(.5, .9));
+//        tree.insert(new Point2D(.6, .0));
+//        tree.insert(new Point2D(.1, .5));
+//        tree.insert(new Point2D(.0, .6));
+//        tree.insert(new Point2D(.9, .7));
+//
+//        StdOut.println(tree.contains(new Point2D(.6, 0)));
+//        StdOut.println(tree.contains(new Point2D(.3, 0)));
+//    }
 }
